@@ -9,7 +9,6 @@ import org.codehaus.plexus.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -25,16 +24,27 @@ public class GenerateDocumentationMojo extends AbstractMojo {
     private File pathToAbstract;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        URL reportPath = GenerateDocumentationMojo.class.getResource("html/");
+        assertOnNull(path, "Please specify the `path` parameter");
+        getLog().info("Processing documentation on: " + path);
         try {
-            FileUtils.copyDirectory(new File(reportPath.toURI()), path);
+            FileUtils.forceMkdir(path);
+
+            URL reportPath = GenerateDocumentationMojo.class.getResource("/html/");
+            assertOnNull(reportPath, "Did not found report resources.");
+
+            getLog().info("Copy data from " + reportPath);
+            com.github.cybortronik.documentation.cucumber.FileUtils.copyResourcesRecursively(reportPath, path);
             if (pathToAbstract != null) {
+                getLog().info("Found file that contains `Abstract`: " + pathToAbstract);
                 FileUtils.copyFile(pathToAbstract, new File(path.toString() + "/abstract.txt"));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
         }
+    }
+
+    private void assertOnNull(Object obj, String message) {
+        if (obj == null)
+            throw new IllegalArgumentException(message);
     }
 }
